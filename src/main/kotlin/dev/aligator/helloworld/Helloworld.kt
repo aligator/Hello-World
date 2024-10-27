@@ -32,7 +32,7 @@ class Helloworld : ModInitializer {
                 filePath.writeText(
                     """§aWelcome to the server, §lAdventurer§r!
 
-This message is built with §n§b[HelloWorld](https://github.com/aligator/helloworld)§r
+This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-World)§r
 
 §9Have Fun!"""
                 )
