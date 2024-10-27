@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "helloworld",
+  "version": "${version}",
+  "name": "HelloWorld",
+  "description": "Hello message on join.",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/helloworld/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "dev.aligator.helloworld.Helloworld"
+    ]
+  },
+  "mixins": [
+    "helloworld.mixins.json",
+    {
+      "config": "helloworld.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "suggests": {
+    "fabric-permissions-api-v0": "*"
+  }
+}
