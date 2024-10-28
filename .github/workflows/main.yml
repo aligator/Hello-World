@@ -1,7 +1,10 @@
 name: Publish on GitHub, CurseForge & Modrinth
-on: [ release ]
+on:
+  create:
+    tags:
+      - v*
 
-env: 
+env:
   JAVA_VERSION: 21
 
 permissions:
