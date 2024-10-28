@@ -12,13 +12,13 @@ import net.minecraft.text.Text
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
+import me.aligator.helloworld.Permissions
 
 val PERMISSION_SHOW = "dev.aligator.helloworld.action.show"
 val PERMISSION_COMMAND_SHOW = "dev.aligator.helloworld.command.helloworld.show"
 val PERMISSION_COMMAND_RELOAD = "dev.aligator.helloworld.command.helloworld.reload"
 
-val USER = 0
-val OP = 4
+
 
 class Helloworld : ModInitializer {
     private val formatter: Formatter = Formatter()
@@ -44,75 +44,19 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
         }
     }
 
-    private fun isPermissionsApiAvailable(): Boolean {
-        try {
-            Class.forName("me.lucko.fabric.api.permissions.v0.Permissions")
-            return true
-        } catch (_: ClassNotFoundException) {
-            return false // not available
-        }
-    }
-
-    private fun checkPermission(source: Entity, permission: String, defaultRequiredLevel: Int): Boolean {
-        if (!isPermissionsApiAvailable()) {
-            return source.hasPermissionLevel(defaultRequiredLevel)
-        }
-
-        return Permissions.check(source, permission, defaultRequiredLevel)
-    }
-
-    /**
-     * The login event does not seem to have the player loaded properly already.
-     *
-     * So in case of a permission manager check the uuid is used instead - which resolves in the future.
-     * This seems to fix this problem for this case.
-     *
-     * Note that I still use the permission level check of the source! So the source and uuid must match!
-     *
-     * See also https://luckperms.net/wiki/Developer-API-Usage#distinction-between-online--offline-players
-     * But since I do not use luckyperms directly, but the simpler fabric-permission api, I have to handle this myself.
-     */
-    private fun checkPermission(
-        uuid: UUID,
-        source: Entity,
-        permission: String,
-        defaultRequiredLevel: Int
-    ): CompletableFuture<Boolean> {
-        if (!isPermissionsApiAvailable()) {
-            return CompletableFuture<Boolean>.completedFuture(source.hasPermissionLevel(defaultRequiredLevel))
-        }
-
-        return Permissions.check(uuid, permission, source.hasPermissionLevel(defaultRequiredLevel))
-    }
-
-    private fun permissionRequire(permission: String, defaultRequiredLevel: Int): Predicate<ServerCommandSource> {
-        return Predicate { source: ServerCommandSource ->
-            Boolean
-            if (source.isExecutedByPlayer) {
-                if (!isPermissionsApiAvailable()) {
-                    return@Predicate source.entity!!.hasPermissionLevel(defaultRequiredLevel)
-                } else {
-                    return@Predicate Permissions.check(source.entity!!, permission, defaultRequiredLevel)
-                }
-            } else {
-                return@Predicate true
-            }
-        }
-    }
-
     private fun registerCommands() {
         CommandRegistrationCallback.EVENT.register { dispatcher, registry, environment ->
             dispatcher.register(
                 literal("helloworld").executes { context ->
                     return@executes 0
                 }.then(literal("show")
-                    .requires(permissionRequire(PERMISSION_COMMAND_SHOW, USER))
+                    .requires(Permissions.permissionRequire(PERMISSION_COMMAND_SHOW, USER))
                     .executes { context ->
                         checkPermission(context.source.entity!!, PERMISSION_SHOW, USER)
                         context.source.sendFeedback({ message }, false)
                         return@executes 1
                     }).then(literal("reload")
-                    .requires(permissionRequire(PERMISSION_COMMAND_RELOAD, OP))
+                    .requires(Permissions.permissionRequire(PERMISSION_COMMAND_RELOAD, OP))
                     .executes { context ->
 
                         loadMessage()
@@ -124,17 +68,14 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
         }
     }
 
-    override fun onInitialize() {
-        loadMessage()
-        registerCommands()
-
+    private fun registerEvents() {
         ServerPlayConnectionEvents.INIT.register { handler, server ->
             if (message == null) {
                 return@register
             }
 
             try {
-                checkPermission(handler.player.uuid, handler.player, PERMISSION_SHOW, USER).thenApply { result ->
+                Permissions.checkPermission(handler.player.uuid, handler.player, PERMISSION_SHOW, USER).thenApply { result ->
                     if (!result) {
                         return@thenApply
                     }
@@ -148,5 +89,11 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
                 e.printStackTrace()
             }
         }
+    }
+
+    override fun onInitialize() {
+        loadMessage()
+        registerCommands()
+        registerEvents()
     }
 }
