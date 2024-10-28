@@ -1,8 +1,7 @@
 name: Publish on GitHub, CurseForge & Modrinth
-on: [ pull_request, workflow_dispatch ]
+on: [ release ]
 
 env: 
-  MINECRAFT_VERSION: 1.21.1
   JAVA_VERSION: 21
 
 permissions:
