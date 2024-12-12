@@ -8,8 +8,9 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.entity.Entity
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
+import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
 
@@ -54,7 +55,7 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
     }
 
     private fun checkPermission(source: Entity, permission: String, defaultRequiredLevel: Int): Boolean {
-        if (!isPermissionsApiAvailable()) {
+        if (!isPermissionsApiAvailable() && source is ServerPlayerEntity) {
             return source.hasPermissionLevel(defaultRequiredLevel)
         }
 
@@ -74,7 +75,7 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
      */
     private fun checkPermission(
         uuid: UUID,
-        source: Entity,
+        source: ServerPlayerEntity,
         permission: String,
         defaultRequiredLevel: Int
     ): CompletableFuture<Boolean> {
@@ -88,9 +89,9 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
     private fun permissionRequire(permission: String, defaultRequiredLevel: Int): Predicate<ServerCommandSource> {
         return Predicate { source: ServerCommandSource ->
             Boolean
-            if (source.isExecutedByPlayer) {
+            if (source.isExecutedByPlayer && source.entity is ServerPlayerEntity) {
                 if (!isPermissionsApiAvailable()) {
-                    return@Predicate source.entity!!.hasPermissionLevel(defaultRequiredLevel)
+                    return@Predicate (source.entity as ServerPlayerEntity).hasPermissionLevel(defaultRequiredLevel)
                 } else {
                     return@Predicate Permissions.check(source.entity!!, permission, defaultRequiredLevel)
                 }
