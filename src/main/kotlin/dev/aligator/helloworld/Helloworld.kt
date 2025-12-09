@@ -6,16 +6,14 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.entity.Entity
-import net.minecraft.server.PlayerManager
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
-import net.minecraft.world.World
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
+import net.minecraft.command.DefaultPermissions
 
 val PERMISSION_SHOW = "dev.aligator.helloworld.action.show"
 val PERMISSION_COMMAND_SHOW = "dev.aligator.helloworld.command.helloworld.show"
@@ -59,7 +57,7 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
 
     private fun hasVanillaPermission(player: ServerPlayerEntity, requiredLevel: Int): Boolean {
         if (requiredLevel <= USER) return true
-        return true // no idea how to check for op permissions. the hasPermissionLevel method is gone...
+        return player.permissions.hasPermission(DefaultPermissions.ADMINS)
     }
 
     private fun checkPermission(source: Entity?, permission: String, defaultRequiredLevel: Int): Boolean {
