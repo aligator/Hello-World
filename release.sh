@@ -19,7 +19,7 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
   TAG="v${NEW_MOD_VERSION}+${MC_VERSION}"
 fi
 
-if [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha|-beta)?\+[0-9]+\.[0-9]+\.[0-9]$ ]]; then
+if [[ $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-alpha|-beta)?\+[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "$TAG"
   git tag "$TAG"
   git push origin "$TAG"
