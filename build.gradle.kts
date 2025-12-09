@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("fabric-loom") version "1.8.9"
+    kotlin("jvm") version "2.2.21"
+    id("net.fabricmc.fabric-loom-remap") version "1.14-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -66,9 +66,9 @@ tasks.processResources {
     filesMatching("fabric.mod.json") {
         expand(
             "version" to project.version,
-            "minecraft_version" to project.property("minecraft_version"),
-            "loader_version" to project.property("loader_version"),
-            "kotlin_loader_version" to project.property("kotlin_loader_version")
+            "minecraft_version" to project.property("minecraft_version") as String,
+            "loader_version" to project.property("loader_version") as String,
+            "kotlin_loader_version" to project.property("kotlin_loader_version") as String
         )
     }
 }
