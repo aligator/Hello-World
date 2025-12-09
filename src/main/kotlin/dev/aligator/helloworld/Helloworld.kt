@@ -6,10 +6,13 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.entity.Entity
+import net.minecraft.server.PlayerManager
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.server.world.ServerWorld
 import net.minecraft.text.Text
+import net.minecraft.world.World
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.function.Predicate
@@ -54,12 +57,17 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
         }
     }
 
-    private fun checkPermission(source: Entity, permission: String, defaultRequiredLevel: Int): Boolean {
-        if (!isPermissionsApiAvailable() && source is ServerPlayerEntity) {
-            return source.hasPermissionLevel(defaultRequiredLevel)
-        }
+    private fun hasVanillaPermission(player: ServerPlayerEntity, requiredLevel: Int): Boolean {
+        if (requiredLevel <= USER) return true
+        return true // no idea how to check for op permissions. the hasPermissionLevel method is gone...
+    }
 
-        return Permissions.check(source, permission, defaultRequiredLevel)
+    private fun checkPermission(source: Entity?, permission: String, defaultRequiredLevel: Int): Boolean {
+        val player = source as? ServerPlayerEntity ?: return true
+        val fallback = hasVanillaPermission(player, defaultRequiredLevel)
+        if (!isPermissionsApiAvailable()) return fallback
+
+        return Permissions.check(player, permission, fallback)
     }
 
     /**
@@ -79,21 +87,24 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
         permission: String,
         defaultRequiredLevel: Int
     ): CompletableFuture<Boolean> {
+        val fallback = hasVanillaPermission(source, defaultRequiredLevel)
         if (!isPermissionsApiAvailable()) {
-            return CompletableFuture<Boolean>.completedFuture(source.hasPermissionLevel(defaultRequiredLevel))
+            return CompletableFuture<Boolean>.completedFuture(fallback)
         }
 
-        return Permissions.check(uuid, permission, source.hasPermissionLevel(defaultRequiredLevel))
+        return Permissions.check(uuid, permission, fallback)
     }
 
     private fun permissionRequire(permission: String, defaultRequiredLevel: Int): Predicate<ServerCommandSource> {
         return Predicate { source: ServerCommandSource ->
             Boolean
             if (source.isExecutedByPlayer && source.entity is ServerPlayerEntity) {
+                val player = source.entity as ServerPlayerEntity
+                val fallback = hasVanillaPermission(player, defaultRequiredLevel)
                 if (!isPermissionsApiAvailable()) {
-                    return@Predicate (source.entity as ServerPlayerEntity).hasPermissionLevel(defaultRequiredLevel)
+                    return@Predicate fallback
                 } else {
-                    return@Predicate Permissions.check(source.entity!!, permission, defaultRequiredLevel)
+                    return@Predicate Permissions.check(player, permission, fallback)
                 }
             } else {
                 return@Predicate true
@@ -109,7 +120,9 @@ This message is built with §n§b[HelloWorld](https://github.com/aligator/Hello-
                 }.then(literal("show")
                     .requires(permissionRequire(PERMISSION_COMMAND_SHOW, USER))
                     .executes { context ->
-                        checkPermission(context.source.entity!!, PERMISSION_SHOW, USER)
+                        if (!checkPermission(context.source.entity, PERMISSION_SHOW, USER)) {
+                            return@executes 0
+                        }
                         context.source.sendFeedback({ message }, false)
                         return@executes 1
                     }).then(literal("reload")

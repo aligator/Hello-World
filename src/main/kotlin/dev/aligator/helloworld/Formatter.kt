@@ -3,7 +3,7 @@ package dev.aligator.helloworld
 import net.minecraft.text.ClickEvent
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
-
+import java.net.URI
 private val FORMAT_PATTERN = Regex("""(?i)(§[0-9A-FK-OR])""")
 private val URL_PATTERN = Regex("""\[([^\n]*?)]\((.+)\)""")
 
@@ -54,17 +54,19 @@ class Formatter {
 
             // Apply the currently active formatting.
             var newText = originalText
-            if (lastModifier != null) {
-                newText = "§${lastModifier.code}$newText"
+            val modifier = lastModifier
+            if (modifier != null) {
+                newText = "§${modifier.code}$newText"
             }
-            if (lastColor != null) {
-                newText = "§${lastColor.code}$newText"
+            val color = lastColor
+            if (color != null) {
+                newText = "§${color.code}$newText"
             }
 
             // Find the last used formats from the original text
             // to preserve them for the next text.
             val match = FORMAT_PATTERN.findAll(originalText)
-            match.map { value -> Formatting.byCode(value.value[1]) }
+            match.map { matchedValue -> Formatting.byCode(matchedValue.value[1]) }
                 .forEach { formatting ->
                     if (formatting?.isModifier == true) {
                         lastModifier = formatting
@@ -77,8 +79,10 @@ class Formatter {
             if (matchedUrl != null) {
                 val url = matchedUrl.groups[2]?.value
                 var urlLiteral = Text.literal(newText)
-                urlLiteral =
-                    urlLiteral.fillStyle(urlLiteral.style.withClickEvent(ClickEvent(ClickEvent.Action.OPEN_URL, url)))
+                if (url != null) {
+                    val clickEvent = ClickEvent.OpenUrl(URI.create(url))
+                    urlLiteral = urlLiteral.fillStyle(urlLiteral.style.withClickEvent(clickEvent))
+                }
 
                 final.append(urlLiteral)
             } else {
